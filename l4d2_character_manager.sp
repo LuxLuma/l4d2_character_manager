@@ -14,8 +14,6 @@
 //Identity fix https://forums.alliedmods.net/showthread.php?t=280539
 //Don't use identity fix with this plugin
 
-static char sModelTracking[MAXPLAYERS+1][PLATFORM_MAX_PATH];// incase of thirdparty models or use of infected models
-
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	if(GetEngineVersion() != Engine_Left4Dead2 )
@@ -39,7 +37,6 @@ public void OnPluginStart()
 {
 	CreateConVar("l4d2_character_manager_version", PLUGIN_VERSION, "l4d2_character_manager_version", FCVAR_DONTRECORD|FCVAR_NOTIFY);
 	HookEvent("bot_player_replace", eBotToPlayer, EventHookMode_Post);
-	HookEvent("round_start", eRoundStart, EventHookMode_Pre);
 }
 
 //credit for some of meurdo identity fix code
@@ -70,36 +67,6 @@ public void eBotToPlayer(Handle hEvent, const char[] sName, bool bDontBroadcast)
 	char sModel[PLATFORM_MAX_PATH];
 	GetEntPropString(iBot, Prop_Data, "m_ModelName", sModel, sizeof(sModel));
 	SetEntityModel(iClient, sModel);
-}
-
-public void eRoundStart(Handle hEvent, const char[] sName, bool bDontBroadcast)
-{
-	for(int i = 0; i <= MaxClients; i++)
-		sModelTracking[i][0] = '\0';
-}
-
-public void OnGameFrame()
-{
-	static int i;
-	for(i = 1;i <= MaxClients;i++)
-	{
-		if(!IsClientInGame(i) || IsFakeClient(i))
-			continue;
-		
-		if(GetClientTeam(i) != 2) 
-		{
-			sModelTracking[i][0] = '\0' ;
-			continue;
-		}
-		
-		static int iModelIndex[MAXPLAYERS+1] = {0, ...};
-		if(iModelIndex[i] == GetEntProp(i, Prop_Data, "m_nModelIndex", 2))
-			continue;
-		
-		static char sModel[PLATFORM_MAX_PATH];
-		GetEntPropString(i, Prop_Data, "m_ModelName", sModel, sizeof(sModel));
-		strcopy(sModelTracking[i], PLATFORM_MAX_PATH, sModel);
-	}
 }
 
 public void OnEntityCreated(int iEntity, const char[] sClassname)

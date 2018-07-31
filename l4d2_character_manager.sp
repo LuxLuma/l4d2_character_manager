@@ -12,7 +12,7 @@
 //don't use with abm's cvar enabled (abm_identityfix 1)
 
 //Identity fix https://forums.alliedmods.net/showthread.php?t=280539
-//Don't use identity fix with this plugin it includes it's own
+//Don't use identity fix with this plugin
 
 static char sModelTracking[MAXPLAYERS+1][PLATFORM_MAX_PATH];// incase of thirdparty models or use of infected models
 

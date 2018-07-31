@@ -63,10 +63,8 @@ public void eBotToPlayer(Handle hEvent, const char[] sName, bool bDontBroadcast)
 	if(iBot < 1 || !IsClientInGame(iBot))
 		return;
 	
-	SetEntProp(iClient, Prop_Send, "m_survivorCharacter", GetEntProp(iBot, Prop_Send, "m_survivorCharacter"));
-	char sModel[PLATFORM_MAX_PATH];
-	GetEntPropString(iBot, Prop_Data, "m_ModelName", sModel, sizeof(sModel));
-	SetEntityModel(iClient, sModel);
+	SetEntProp(iClient, Prop_Send, "m_survivorCharacter", GetEntProp(iBot, Prop_Send, "m_survivorCharacter"), 2, 2);
+	SetEntProp(iClient, Prop_Send, "m_nModelIndex", GetEntProp(iBot, Prop_Send, "m_nModelIndex"), 2, 2);
 }
 
 public void OnEntityCreated(int iEntity, const char[] sClassname)

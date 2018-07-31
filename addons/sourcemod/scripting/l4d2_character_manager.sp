@@ -30,7 +30,7 @@ public Plugin myinfo =
 	author = "Lux",
 	description = "Sets bots to least used survivor character when spawned from(0-7)",
 	version = PLUGIN_VERSION,
-	url = ""
+	url = "https://forums.alliedmods.net/showthread.php?p=2607394"
 };
 
 public void OnPluginStart()
@@ -100,7 +100,6 @@ public void NextFrame(int iUserID)
 //set iclient to 0 to not ignore, for anyone using this function
 int CheckLeastUsedSurvivor(int iClient)
 {
-
 	int iLeastChar[8];
 	int iCharBuffer;
 	int i;

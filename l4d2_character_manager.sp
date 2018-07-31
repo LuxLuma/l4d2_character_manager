@@ -100,6 +100,7 @@ public void NextFrame(int iUserID)
 //set iclient to 0 to not ignore, for anyone using this function
 int CheckLeastUsedSurvivor(int iClient)
 {
+
 	int iLeastChar[8];
 	int iCharBuffer;
 	int i;
@@ -108,7 +109,7 @@ int CheckLeastUsedSurvivor(int iClient)
 		if(!IsClientInGame(i) || GetClientTeam(i) != 2 || i == iClient)
 			continue;
 		
-		if((iCharBuffer = GetEntProp(i, Prop_Send, "m_survivorCharacter")) > 7)//in SpawnPost the entprop is 8, because valve wants it to be 8 at this point
+		if((iCharBuffer = GetEntProp(i, Prop_Send, "m_survivorCharacter", 2)) > 7)//in SpawnPost the entprop is 8, because valve wants it to be 8 at this point
 			continue;
 		
 		iLeastChar[iCharBuffer]++;
@@ -132,7 +133,7 @@ int CheckLeastUsedSurvivor(int iClient)
 void SetCharacter(int iClient)
 {
 	int iCharSet = CheckLeastUsedSurvivor(iClient);
-	SetEntProp(iClient, Prop_Send, "m_survivorCharacter", iCharSet);
+	SetEntProp(iClient, Prop_Send, "m_survivorCharacter", iCharSet, 2);
 	SetEntityModel(iClient, sSurvivorModels[iCharSet]);
 	SetClientInfo(iClient, "name", sSurvivorNames[iCharSet]);
 }

@@ -118,13 +118,7 @@ public void SpawnPost(int iEntity)
 	if(GetClientTeam(iEntity) == 4)
 		return;
 	
-	int iCharSet;
-	iCharSet = CheckLeastUsedSurvivor(iEntity);
-	
-	SetEntProp(iEntity, Prop_Send, "m_survivorCharacter", iCharSet);
-	SetEntityModel(iEntity, sSurvivorModels[iCharSet]);
-	SetClientInfo(iEntity, "name", sSurvivorNames[iCharSet]);
-	
+	SetCharacter(iEntity);
 	RequestFrame(NextFrame, GetClientUserId(iEntity));
 }
 
@@ -135,12 +129,7 @@ public void NextFrame(int iUserID)
 	if(iClient < 1 || !IsClientInGame(iClient))
 		return;
 	
-	//SDKUnhook(iClient, SDKHook_SpawnPost, SpawnPost);
-	
-	int iCharSet = CheckLeastUsedSurvivor(iClient);
-	SetEntProp(iClient, Prop_Send, "m_survivorCharacter", iCharSet);
-	SetEntityModel(iClient, sSurvivorModels[iCharSet]);
-	SetClientInfo(iClient, "name", sSurvivorNames[iCharSet]);
+	SetCharacter(iClient);
 }
 
 //set iclient to 0 to not ignore, for anyone using this function
@@ -173,4 +162,12 @@ int CheckLeastUsedSurvivor(int iClient)
 	}
 	
 	return iCharBuffer;
+}
+
+void SetCharacter(int iClient)
+{
+	int iCharSet = CheckLeastUsedSurvivor(iClient);
+	SetEntProp(iClient, Prop_Send, "m_survivorCharacter", iCharSet);
+	SetEntityModel(iClient, sSurvivorModels[iCharSet]);
+	SetClientInfo(iClient, "name", sSurvivorNames[iCharSet]);
 }

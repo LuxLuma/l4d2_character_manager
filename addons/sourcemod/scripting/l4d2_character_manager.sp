@@ -6,7 +6,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.0.1"
+#define PLUGIN_VERSION "1.0.2"
 
 //ABM https://forums.alliedmods.net/showthread.php?p=2477820
 //don't use with abm's cvar enabled (abm_identityfix 1)
@@ -64,7 +64,9 @@ public void eBotToPlayer(Handle hEvent, const char[] sName, bool bDontBroadcast)
 		return;
 	
 	SetEntProp(iClient, Prop_Send, "m_survivorCharacter", GetEntProp(iBot, Prop_Send, "m_survivorCharacter", 2), 2);
-	SetEntProp(iClient, Prop_Send, "m_nModelIndex", GetEntProp(iBot, Prop_Send, "m_nModelIndex"));
+	char sModel[PLATFORM_MAX_PATH];
+	GetEntPropString(iBot, Prop_Data, "m_ModelName", sModel, sizeof(sModel));
+	SetEntityModel(iClient, sModel);
 }
 
 public void OnEntityCreated(int iEntity, const char[] sClassname)

@@ -6,7 +6,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.0.2"
+#define PLUGIN_VERSION "1.0.5"
 
 //ABM https://forums.alliedmods.net/showthread.php?p=2477820
 //don't use with abm's cvar enabled (abm_identityfix 1)
@@ -37,6 +37,7 @@ public void OnPluginStart()
 {
 	CreateConVar("l4d2_character_manager_version", PLUGIN_VERSION, "l4d2_character_manager_version", FCVAR_DONTRECORD|FCVAR_NOTIFY);
 	HookEvent("bot_player_replace", eBotToPlayer, EventHookMode_Post);
+	HookEvent("player_bot_replace", ePlayerToBot, EventHookMode_Post);
 }
 
 //credit for some of meurdo identity fix code
@@ -56,17 +57,26 @@ static char sSurvivorModels[8][] =
 public void eBotToPlayer(Handle hEvent, const char[] sName, bool bDontBroadcast)
 {
 	int iClient = GetClientOfUserId(GetEventInt(hEvent, "player"));
-	if(iClient < 1 || !IsClientInGame(iClient) || IsFakeClient(iClient)) 
+	if(iClient < 1 || !IsClientInGame(iClient) || GetClientTeam(iClient) != 2 || IsFakeClient(iClient)) 
 		return;
 	
 	int iBot = GetClientOfUserId(GetEventInt(hEvent, "bot"));
-	if(iBot < 1 || !IsClientInGame(iBot))
+	if(iBot < 1 || !IsClientInGame(iBot) || GetClientTeam(iClient) != 2)
 		return;
 	
 	SetEntProp(iClient, Prop_Send, "m_survivorCharacter", GetEntProp(iBot, Prop_Send, "m_survivorCharacter", 2), 2);
 	char sModel[PLATFORM_MAX_PATH];
 	GetEntPropString(iBot, Prop_Data, "m_ModelName", sModel, sizeof(sModel));
 	SetEntityModel(iClient, sModel);
+}
+
+public void ePlayerToBot(Handle hEvent, const char[] sName, bool bDontBroadcast)
+{
+	int iBot = GetClientOfUserId(GetEventInt(hEvent, "bot"));
+	if(iBot < 1 || !IsClientInGame(iBot) || GetClientTeam(iBot) != 2)
+		return;
+	
+	SetCharacter(iBot);
 }
 
 public void OnEntityCreated(int iEntity, const char[] sClassname)

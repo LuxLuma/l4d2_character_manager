@@ -92,7 +92,7 @@ public void ePlayerToBot(Handle hEvent, const char[] sName, bool bDontBroadcast)
 		return;
 	
 	int iClient = GetClientOfUserId(GetEventInt(hEvent, "player"));
-	if(iClient < 1 || !IsClientInGame(iClient) || IsFakeClient(iClient) || GetClientTeam(iClient) != 2 || sModelTracking[iClient][0] == '\0') 
+	if(iClient < 1 || !IsClientInGame(iClient) || GetClientTeam(iClient) != 2 || IsFakeClient(iClient) || sModelTracking[iClient][0] == '\0') // team check before fakeclient check incase of spawning infected with CreateFakeClient()
 	{
 		SetCharacter(iBot);
 		return;

@@ -159,7 +159,7 @@ public void SpawnPost(int iEntity)// before events
 	RequestFrame(NextFrame, GetClientUserId(iEntity));
 }
 
-public void NextFrame(int iUserID)
+public void NextFrame(int iUserID)// don't identity fix bots that die and respawn just find least used survivor
 {
 	int iClient = GetClientOfUserId(iUserID);
 	

@@ -14,6 +14,8 @@
 //Identity fix https://forums.alliedmods.net/showthread.php?t=280539
 //Don't use identity fix with this plugin
 
+static char sModelTracking[MAXPLAYERS+1][PLATFORM_MAX_PATH];
+
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
 	if(GetEngineVersion() != Engine_Left4Dead2 )
@@ -38,11 +40,18 @@ public void OnPluginStart()
 	CreateConVar("l4d2_character_manager_version", PLUGIN_VERSION, "l4d2_character_manager_version", FCVAR_DONTRECORD|FCVAR_NOTIFY);
 	HookEvent("bot_player_replace", eBotToPlayer, EventHookMode_Post);
 	HookEvent("player_bot_replace", ePlayerToBot, EventHookMode_Post);
+	HookEvent("round_start", eRoundEnd, EventHookMode_Pre);
+}
+
+public void eRoundEnd(Handle hEvent, const char[] sName, bool bDontBroadcast)
+{
+	for(int i = 0; i <= MaxClients; i++)
+		sModelTracking[i][0] = '\0';
 }
 
 //credit for some of meurdo identity fix code
-static char sSurvivorNames[8][] = { "Nick", "Rochelle", "Coach", "Ellis", "Bill", "Zoey", "Francis", "Louis"};
-static char sSurvivorModels[8][] =
+static char sSurvivorNames[9][] = { "Nick", "Rochelle", "Coach", "Ellis", "Bill", "Zoey", "Francis", "Louis", "AdaWong"};
+static char sSurvivorModels[9][] =
 {
 	"models/survivors/survivor_gambler.mdl",
 	"models/survivors/survivor_producer.mdl",
@@ -52,6 +61,7 @@ static char sSurvivorModels[8][] =
 	"models/survivors/survivor_teenangst.mdl",
 	"models/survivors/survivor_biker.mdl",
 	"models/survivors/survivor_manager.mdl",
+	"models/survivors/survivor_adawong.mdl"
 };
 
 public void eBotToPlayer(Handle hEvent, const char[] sName, bool bDontBroadcast)
@@ -76,7 +86,48 @@ public void ePlayerToBot(Handle hEvent, const char[] sName, bool bDontBroadcast)
 	if(iBot < 1 || !IsClientInGame(iBot) || GetClientTeam(iBot) != 2)
 		return;
 	
-	SetCharacter(iBot);
+	int iClient = GetClientOfUserId(GetEventInt(hEvent, "player"));
+	if(iClient < 1 || !IsClientInGame(iClient) || IsFakeClient(iClient) || GetClientTeam(iClient) != 2 || sModelTracking[iClient][0] == '\0') 
+	{
+		SetCharacter(iBot);
+		return;
+	}
+	
+	SetEntProp(iBot, Prop_Send, "m_survivorCharacter", GetEntProp(iClient, Prop_Send, "m_survivorCharacter"));
+	SetEntityModel(iBot, sModelTracking[iClient]);
+	
+	if(!StrContains(sModelTracking[8], "survivor_adawong", false))
+	{
+		for (int i = 0; i < 7; i++)
+			if (StrEqual(sModelTracking[iClient], sSurvivorModels[i])) 
+				SetClientInfo(iBot, "name", sSurvivorNames[i]);
+	}
+	else
+		SetClientInfo(iBot, "name", sSurvivorNames[8]);
+}
+
+public void OnGameFrame()
+{
+	static int i;
+	for(i = 1;i <= MaxClients;i++)
+	{
+		if(!IsClientInGame(i) || IsFakeClient(i))
+			continue;
+		
+		if(GetClientTeam(i) != 2) 
+		{
+			sModelTracking[i][0] = '\0' ;
+			continue;
+		}
+		
+		static int iModelIndex[MAXPLAYERS+1] = {0, ...};
+		if(iModelIndex[i] == GetEntProp(i, Prop_Data, "m_nModelIndex", 2))
+			continue;
+		
+		static char sModel[PLATFORM_MAX_PATH];
+		GetEntPropString(i, Prop_Data, "m_ModelName", sModel, sizeof(sModel));
+		strcopy(sModelTracking[i], PLATFORM_MAX_PATH, sModel);
+	}
 }
 
 public void OnEntityCreated(int iEntity, const char[] sClassname)

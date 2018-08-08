@@ -15,6 +15,7 @@
 //Don't use identity fix with this plugin
 
 static char sModelTracking[MAXPLAYERS+1][PLATFORM_MAX_PATH];
+static bool bShouldIgnoreOnce[MAXPLAYERS+1];
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -40,13 +41,16 @@ public void OnPluginStart()
 	CreateConVar("l4d2_character_manager_version", PLUGIN_VERSION, "l4d2_character_manager_version", FCVAR_DONTRECORD|FCVAR_NOTIFY);
 	HookEvent("bot_player_replace", eBotToPlayer, EventHookMode_Post);
 	HookEvent("player_bot_replace", ePlayerToBot, EventHookMode_Post);
-	HookEvent("round_start", eRoundEnd, EventHookMode_Pre);
+	HookEvent("round_start", eRoundStart, EventHookMode_Pre);
 }
 
-public void eRoundEnd(Handle hEvent, const char[] sName, bool bDontBroadcast)
+public void eRoundStart(Handle hEvent, const char[] sName, bool bDontBroadcast)
 {
 	for(int i = 0; i <= MaxClients; i++)
+	{
+		bShouldIgnoreOnce[i] = false;
 		sModelTracking[i][0] = '\0';
+	}
 }
 
 //credit for some of meurdo identity fix code
@@ -78,6 +82,7 @@ public void eBotToPlayer(Handle hEvent, const char[] sName, bool bDontBroadcast)
 	char sModel[PLATFORM_MAX_PATH];
 	GetEntPropString(iBot, Prop_Data, "m_ModelName", sModel, sizeof(sModel));
 	SetEntityModel(iClient, sModel);
+	bShouldIgnoreOnce[iBot] = false;
 }
 
 public void ePlayerToBot(Handle hEvent, const char[] sName, bool bDontBroadcast)
@@ -96,7 +101,7 @@ public void ePlayerToBot(Handle hEvent, const char[] sName, bool bDontBroadcast)
 	SetEntProp(iBot, Prop_Send, "m_survivorCharacter", GetEntProp(iClient, Prop_Send, "m_survivorCharacter"));
 	SetEntityModel(iBot, sModelTracking[iClient]);
 	
-	if(!StrContains(sModelTracking[8], "survivor_adawong", false))
+	if(!StrContains(sModelTracking[iClient], "survivor_adawong", false))
 	{
 		for (int i = 0; i < 7; i++)
 			if (StrEqual(sModelTracking[iClient], sSurvivorModels[i])) 
@@ -104,6 +109,8 @@ public void ePlayerToBot(Handle hEvent, const char[] sName, bool bDontBroadcast)
 	}
 	else
 		SetClientInfo(iBot, "name", sSurvivorNames[8]);
+	
+	bShouldIgnoreOnce[iBot] = true;
 }
 
 public void OnGameFrame()
@@ -157,6 +164,11 @@ public void NextFrame(int iUserID)
 	if(iClient < 1 || !IsClientInGame(iClient))
 		return;
 	
+	if(bShouldIgnoreOnce[iClient])
+	{
+		bShouldIgnoreOnce[iClient] = false;
+		return;
+	}
 	SetCharacter(iClient);
 }
 

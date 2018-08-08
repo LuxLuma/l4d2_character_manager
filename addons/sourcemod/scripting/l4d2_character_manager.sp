@@ -85,7 +85,7 @@ public void eBotToPlayer(Handle hEvent, const char[] sName, bool bDontBroadcast)
 	bShouldIgnoreOnce[iBot] = false;
 }
 
-public void ePlayerToBot(Handle hEvent, const char[] sName, bool bDontBroadcast)
+public void ePlayerToBot(Handle hEvent, const char[] sName, bool bDontBroadcast)// CreateFakeClient this is called after SpawnPost hook
 {
 	int iBot = GetClientOfUserId(GetEventInt(hEvent, "bot"));
 	if(iBot < 1 || !IsClientInGame(iBot) || GetClientTeam(iBot) != 2)
@@ -145,7 +145,7 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 	SDKHook(iEntity, SDKHook_SpawnPost, SpawnPost);
 }
 
-public void SpawnPost(int iEntity)
+public void SpawnPost(int iEntity)// before events
 {
 	if(!IsValidEntity(iEntity) || !IsFakeClient(iEntity))
 		return;	
@@ -154,6 +154,8 @@ public void SpawnPost(int iEntity)
 		return;
 	
 	SetCharacter(iEntity);
+	
+	bShouldIgnoreOnce[iEntity] = false;
 	RequestFrame(NextFrame, GetClientUserId(iEntity));
 }
 

@@ -6,7 +6,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION "1.1"
+#define PLUGIN_VERSION "1.1.1"
 
 //ABM https://forums.alliedmods.net/showthread.php?p=2477820
 //don't use with abm's cvar enabled (abm_identityfix 1)

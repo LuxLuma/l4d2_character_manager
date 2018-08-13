@@ -98,17 +98,16 @@ public void ePlayerToBot(Handle hEvent, const char[] sName, bool bDontBroadcast)
 		return;
 	}
 	
-	SetEntProp(iBot, Prop_Send, "m_survivorCharacter", GetEntProp(iClient, Prop_Send, "m_survivorCharacter"));
+	int iSurvivorChar = GetEntProp(iClient, Prop_Send, "m_survivorCharacter");
+	SetEntProp(iBot, Prop_Send, "m_survivorCharacter", iSurvivorChar);
 	SetEntityModel(iBot, sModelTracking[iClient]);
 	
-	if(!StrContains(sModelTracking[iClient], "survivor_adawong", false))
-	{
+	if(iSurvivorChar == 2 && StrContains(sModelTracking[iClient], "survivor_adawong", false))
+		SetClientInfo(iBot, "name", sSurvivorNames[8]);
+	else
 		for (int i = 0; i < 7; i++)
 			if (StrEqual(sModelTracking[iClient], sSurvivorModels[i])) 
 				SetClientInfo(iBot, "name", sSurvivorNames[i]);
-	}
-	else
-		SetClientInfo(iBot, "name", sSurvivorNames[8]);
 	
 	bShouldIgnoreOnce[iBot] = true;
 }

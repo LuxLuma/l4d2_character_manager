@@ -19,7 +19,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION 	"1.3.0"
+#define PLUGIN_VERSION 	"1.3.1"
 #define GAMEDATA		"l4d2_character_manager"
 
 

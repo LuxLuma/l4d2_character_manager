@@ -12,6 +12,7 @@
 #include <sdktools>
 #include <sdkhooks>
 
+
 #define REQUIRE_EXTENSIONS
 #include <dhooks>
 #undef REQUIRE_EXTENSIONS
@@ -125,6 +126,8 @@ public void OnPluginStart()
 public void eConvarChanged(Handle hCvar, const char[] sOldVal, const char[] sNewVal)
 {
 	iSurvivorSet = view_as<L4D2_SurvivorSet>(GetConVarInt(hCvar_SurvivorSet));
+	if(iCurrentSet != L4D2_SurvivorSet_L4D2)
+		PrintToServer("[Character_manager]L4D2 survivor voices won't be loaded until next map.");
 }
 
 public void eRoundStart(Handle hEvent, const char[] sName, bool bDontBroadcast)

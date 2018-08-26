@@ -19,7 +19,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION 	"1.3.1"
+#define PLUGIN_VERSION 	"1.3.2"
 #define GAMEDATA		"l4d2_character_manager"
 
 
@@ -138,6 +138,13 @@ public void eRoundStart(Handle hEvent, const char[] sName, bool bDontBroadcast)
 		sModelTracking[i][0] = '\0';
 	}
 }
+
+public void OnMapStart()
+{
+	for(int i = 0; i < 8; i++)
+		PrecacheModel(sSurvivorModels[i], true);
+}
+
 
 public void eBotToPlayer(Handle hEvent, const char[] sName, bool bDontBroadcast)
 {

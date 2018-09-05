@@ -12,14 +12,19 @@
 #include <sdktools>
 #include <sdkhooks>
 
+#define COMPILE_TO_DOWNTOWN false
 
 #define REQUIRE_EXTENSIONS
-#include <dhooks>
+#if COMPILE_TO_DOWNTOWN
+	#include <left4downtown>
+#else
+	#include <dhooks>
+#endif
 #undef REQUIRE_EXTENSIONS
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION 	"1.3.2"
+#define PLUGIN_VERSION 	"1.3.3"
 #define GAMEDATA		"l4d2_character_manager"
 
 
@@ -104,6 +109,8 @@ public void OnPluginStart()
 	HookEvent("player_bot_replace", ePlayerToBot, EventHookMode_Post);
 	HookEvent("round_start", eRoundStart, EventHookMode_Pre);
 	
+	#if !COMPILE_TO_DOWNTOWN
+	
 	Handle hGameData = LoadGameConfigFile(GAMEDATA);
 	if( hGameData == null ) 
 		SetFailState("Failed to load \"%s.txt\" gamedata.", GAMEDATA);
@@ -121,6 +128,8 @@ public void OnPluginStart()
 	// Add a pre hook on the function.
 	if (!DHookEnableDetour(hDetour_OnGetSurvivorSet, true, Detour_OnGetSurvivorSet))
 		SetFailState("Failed to detour OnGetSurvivorSet.");
+	
+	#endif
 }
 
 public void eConvarChanged(Handle hCvar, const char[] sOldVal, const char[] sNewVal)
@@ -180,7 +189,7 @@ public void ePlayerToBot(Handle hEvent, const char[] sName, bool bDontBroadcast)
 	SetEntProp(iBot, Prop_Send, "m_survivorCharacter", iSurvivorChar);
 	SetEntityModel(iBot, sModelTracking[iClient]);
 	
-	if(iSurvivorChar == 2 && StrContains(sModelTracking[iClient], "survivor_adawong", false))
+	if(iSurvivorChar == 2 && StrEqual(sModelTracking[iClient], "models/survivors/survivor_adawong.mdl", false))
 		SetClientInfo(iBot, "name", sSurvivorNames[8]);
 	else
 		for (int i = 0; i < 7; i++)
@@ -361,7 +370,7 @@ void SetCharacterInfo(int iClient, int iCharIndex, int iModelIndex)
 	SetEntityModel(iClient, sSurvivorModels[iModelIndex]);
 	SetClientInfo(iClient, "name", sSurvivorNames[iModelIndex]);
 }
-
+#if !COMPILE_TO_DOWNTOWN
 public MRESReturn Detour_OnGetSurvivorSet(Handle hReturn)
 {
 	// Store the return value
@@ -379,3 +388,21 @@ public MRESReturn Detour_OnGetSurvivorSet(Handle hReturn)
 	DHookSetReturn(hReturn, L4D2_SurvivorSet_L4D1);
 	return MRES_Supercede;
 }
+#else
+public Action L4D_OnFastGetSurvivorSet(int &retVal)
+{
+	iCurrentSet = view_as<L4D2_SurvivorSet>(retVal);
+	if(iSurvivorSet == L4D2_SurvivorSet_Default)
+		return Plugin_Continue;
+	
+	if(iSurvivorSet == L4D2_SurvivorSet_Both || iSurvivorSet == L4D2_SurvivorSet_L4D2)
+	{
+		iCurrentSet = L4D2_SurvivorSet_L4D2;
+		retVal = view_as<int>(L4D2_SurvivorSet_L4D2);
+		return Plugin_Handled;
+	}
+	iCurrentSet = L4D2_SurvivorSet_L4D1;
+	retVal = view_as<int>(L4D2_SurvivorSet_L4D1);
+	return Plugin_Handled;
+}
+#endif

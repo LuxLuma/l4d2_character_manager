@@ -12,14 +12,13 @@
 #include <sdktools>
 #include <sdkhooks>
 
-
 #define REQUIRE_EXTENSIONS
 #include <dhooks>
 #undef REQUIRE_EXTENSIONS
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION 	"1.3.1"
+#define PLUGIN_VERSION 	"1.3.5"
 #define GAMEDATA		"l4d2_character_manager"
 
 
@@ -139,6 +138,13 @@ public void eRoundStart(Handle hEvent, const char[] sName, bool bDontBroadcast)
 	}
 }
 
+public void OnMapStart()
+{
+	for(int i = 0; i < 8; i++)
+		PrecacheModel(sSurvivorModels[i], true);
+}
+
+
 public void eBotToPlayer(Handle hEvent, const char[] sName, bool bDontBroadcast)
 {
 	int iClient = GetClientOfUserId(GetEventInt(hEvent, "player"));
@@ -173,7 +179,7 @@ public void ePlayerToBot(Handle hEvent, const char[] sName, bool bDontBroadcast)
 	SetEntProp(iBot, Prop_Send, "m_survivorCharacter", iSurvivorChar);
 	SetEntityModel(iBot, sModelTracking[iClient]);
 	
-	if(iSurvivorChar == 2 && StrContains(sModelTracking[iClient], "survivor_adawong", false))
+	if(iSurvivorChar == 2 && StrEqual(sModelTracking[iClient], "models/survivors/survivor_adawong.mdl", false))
 		SetClientInfo(iBot, "name", sSurvivorNames[8]);
 	else
 		for (int i = 0; i < 7; i++)
@@ -181,6 +187,7 @@ public void ePlayerToBot(Handle hEvent, const char[] sName, bool bDontBroadcast)
 				SetClientInfo(iBot, "name", sSurvivorNames[i]);
 	
 	bShouldIgnoreOnce[iBot] = true;
+	RequestFrame(ResetVar, iBot);
 }
 
 public void OnGameFrame()
@@ -215,7 +222,7 @@ public void OnEntityCreated(int iEntity, const char[] sClassname)
 	SDKHook(iEntity, SDKHook_SpawnPost, SpawnPost);
 }
 
-public void SpawnPost(int iEntity)// before events
+public void SpawnPost(int iEntity)// before events!
 {
 	if(!IsValidEntity(iEntity) || !IsFakeClient(iEntity))
 		return;	
@@ -224,24 +231,29 @@ public void SpawnPost(int iEntity)// before events
 		return;
 	
 	SetCharacter(iEntity);
-	
-	bShouldIgnoreOnce[iEntity] = false;
 	RequestFrame(NextFrame, GetClientUserId(iEntity));
 }
 
-public void NextFrame(int iUserID)// don't identity fix bots that die and respawn just find least used survivor
+/*
+don't identity fix bots that die and respawn just find least used survivor
+and
+This is called before ResetVar() framehook because SpawnPost triggers before events
+*/
+public void NextFrame(int iUserID)
 {
 	int iClient = GetClientOfUserId(iUserID);
+	if(bShouldIgnoreOnce[iClient])
+		return;
 	
 	if(iClient < 1 || !IsClientInGame(iClient))
 		return;
 	
-	if(bShouldIgnoreOnce[iClient])
-	{
-		bShouldIgnoreOnce[iClient] = false;
-		return;
-	}
 	SetCharacter(iClient);
+}
+
+public void ResetVar(int iBot)// this is special called after NextFrame
+{
+	bShouldIgnoreOnce[iBot] = false;
 }
 
 //set iclient to 0 to not ignore, for anyone using this function

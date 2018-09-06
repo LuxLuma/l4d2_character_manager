@@ -22,8 +22,8 @@
 			{
 				"library"	"server"
 				"linux"		"@_ZN16CTerrorGameRules14GetSurvivorSetEv"
-				"windows" 	"\x55\x8B\xEC\x51\x8B\x0D\x2A\x2A\x2A\x2A\x8B\x01\x8B\x50\x2A\x53"
-				/* 55 8B EC 51 8B 0D ? ? ? ? 8B 01 8B 50 ? 53 */
+				"windows" 	"\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x2A\x8B\x01\x8B\x50\x2A\x53\x56\xBB"
+				/* ? ? ? ? ? ? ? ? ? ? 8B 01 8B 50 ? 53 56 BB */
 			}
 		}
     }

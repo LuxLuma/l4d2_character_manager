@@ -18,7 +18,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION 	"1.3.5"
+#define PLUGIN_VERSION 	"1.3.6"
 #define GAMEDATA		"l4d2_character_manager"
 
 
@@ -64,6 +64,9 @@ static char sSurvivorModels[9][] =
 	"models/survivors/survivor_adawong.mdl"
 };
 
+static Handle hCvar_IdentityFix = null;
+static bool bIdentityFix = false;
+
 
 static char sModelTracking[MAXPLAYERS+1][PLATFORM_MAX_PATH];
 static bool bShouldIgnoreOnce[MAXPLAYERS+1];
@@ -97,7 +100,10 @@ public void OnPluginStart()
 	CreateConVar("l4d2_character_manager_version", PLUGIN_VERSION, "l4d2_character_manager_version", FCVAR_DONTRECORD|FCVAR_NOTIFY);
 	hCvar_SurvivorSet = CreateConVar("l4d2_survivor_set", "3", "survivor set you wish to use, 0 = (use map default), 1 = (l4d1), 2 = (l4d2), 3 = (use both)", FCVAR_NOTIFY, true, 0.0, true, 3.0);
 	HookConVarChange(hCvar_SurvivorSet, eConvarChanged);
+	hCvar_IdentityFix = CreateConVar("l4d2_identity_fix", "1", "Should enable identity fix for players(NOT BOTS) 0 = (disable) 1 = (enabled)", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	HookConVarChange(hCvar_IdentityFix, eConvarChanged);
 	AutoExecConfig(true, "l4d2_character_manager");
+	CvarsChanged();
 	
 	HookEvent("bot_player_replace", eBotToPlayer, EventHookMode_Post);
 	HookEvent("player_bot_replace", ePlayerToBot, EventHookMode_Post);
@@ -124,9 +130,16 @@ public void OnPluginStart()
 
 public void eConvarChanged(Handle hCvar, const char[] sOldVal, const char[] sNewVal)
 {
+	CvarsChanged();
+}
+
+void CvarsChanged()
+{
 	iSurvivorSet = view_as<L4D2_SurvivorSet>(GetConVarInt(hCvar_SurvivorSet));
 	if(iCurrentSet != L4D2_SurvivorSet_L4D2)
 		PrintToServer("[Character_manager]L4D2 survivor voices won't be loaded until next map.");
+	
+	bIdentityFix = GetConVarInt(hCvar_IdentityFix) > 0;
 }
 
 public void eRoundStart(Handle hEvent, const char[] sName, bool bDontBroadcast)
@@ -169,7 +182,7 @@ public void ePlayerToBot(Handle hEvent, const char[] sName, bool bDontBroadcast)
 		return;
 	
 	int iClient = GetClientOfUserId(GetEventInt(hEvent, "player"));
-	if(iClient < 1 || !IsClientInGame(iClient) || GetClientTeam(iClient) != 2 || IsFakeClient(iClient) || sModelTracking[iClient][0] == '\0') // team check before fakeclient check incase of spawning infected with CreateFakeClient()
+	if(iClient < 1 || !IsClientInGame(iClient) || GetClientTeam(iClient) != 2 || IsFakeClient(iClient) || !bIdentityFix || sModelTracking[iClient][0] == '\0') // team check before fakeclient check incase of spawning infected with CreateFakeClient()
 	{
 		SetCharacter(iBot);
 		return;
@@ -192,6 +205,9 @@ public void ePlayerToBot(Handle hEvent, const char[] sName, bool bDontBroadcast)
 
 public void OnGameFrame()
 {
+	if(!bIdentityFix)
+		return;
+	
 	static int i;
 	for(i = 1;i <= MaxClients;i++)
 	{

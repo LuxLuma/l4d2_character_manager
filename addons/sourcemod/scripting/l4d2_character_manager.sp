@@ -18,7 +18,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION 	"1.3.6"
+#define PLUGIN_VERSION 	"1.3.8"
 #define GAMEDATA		"l4d2_character_manager"
 
 
@@ -74,6 +74,7 @@ static bool bShouldIgnoreOnce[MAXPLAYERS+1];
 static Handle hCvar_SurvivorSet = null;
 L4D2_SurvivorSet iSurvivorSet = L4D2_SurvivorSet_Both;
 L4D2_SurvivorSet iCurrentSet = L4D2_SurvivorSet_Default;
+L4D2_SurvivorSet iOrignalMapSet;
 
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
@@ -165,7 +166,7 @@ public void eBotToPlayer(Handle hEvent, const char[] sName, bool bDontBroadcast)
 		return;
 	
 	int iBot = GetClientOfUserId(GetEventInt(hEvent, "bot"));
-	if(iBot < 1 || !IsClientInGame(iBot) || GetClientTeam(iClient) != 2)
+	if(iBot < 1 || !IsClientInGame(iBot))
 		return;
 	
 	SetEntProp(iClient, Prop_Send, "m_survivorCharacter", GetEntProp(iBot, Prop_Send, "m_survivorCharacter", 2), 2);
@@ -178,11 +179,14 @@ public void eBotToPlayer(Handle hEvent, const char[] sName, bool bDontBroadcast)
 public void ePlayerToBot(Handle hEvent, const char[] sName, bool bDontBroadcast)// CreateFakeClient this is called after SpawnPost hook
 {
 	int iBot = GetClientOfUserId(GetEventInt(hEvent, "bot"));
-	if(iBot < 1 || !IsClientInGame(iBot) || GetClientTeam(iBot) != 2)
+	if(iBot < 1 || !IsClientInGame(iBot))
 		return;
 	
 	int iClient = GetClientOfUserId(GetEventInt(hEvent, "player"));
-	if(iClient < 1 || !IsClientInGame(iClient) || GetClientTeam(iClient) != 2 || IsFakeClient(iClient) || !bIdentityFix || sModelTracking[iClient][0] == '\0') // team check before fakeclient check incase of spawning infected with CreateFakeClient()
+	if(iClient < 1 || !IsClientInGame(iClient) || GetClientTeam(iClient) != 2)
+		return;
+	
+	if(IsFakeClient(iClient) || !bIdentityFix || sModelTracking[iClient][0] == '\0') // team check before fakeclient check incase of spawning infected with CreateFakeClient()
 	{
 		SetCharacter(iBot);
 		return;
@@ -192,10 +196,10 @@ public void ePlayerToBot(Handle hEvent, const char[] sName, bool bDontBroadcast)
 	SetEntProp(iBot, Prop_Send, "m_survivorCharacter", iSurvivorChar);
 	SetEntityModel(iBot, sModelTracking[iClient]);
 	
-	if(iSurvivorChar == 2 && StrEqual(sModelTracking[iClient], "models/survivors/survivor_adawong.mdl", false))
+	if(iSurvivorChar == 2 && StrEqual(sModelTracking[iClient], sSurvivorModels[8], false))
 		SetClientInfo(iBot, "name", sSurvivorNames[8]);
 	else
-		for (int i = 0; i < 7; i++)
+		for (int i = 0; i < 8; i++)
 			if (StrEqual(sModelTracking[iClient], sSurvivorModels[i])) 
 				SetClientInfo(iBot, "name", sSurvivorNames[i]);
 	
@@ -296,22 +300,40 @@ int CheckLeastUsedSurvivor(int iClient)
 		iLeastChar[iCharBuffer]++;
 	}
 	
-	int iSurvivorCharIndex = iLeastChar[0];
-	iCharBuffer = 0;
-	int iNum;
-	if(iSurvivorSet == L4D2_SurvivorSet_L4D2 || (iSurvivorSet == L4D2_SurvivorSet_Default && iCurrentSet == L4D2_SurvivorSet_L4D2)) 
+	
+	
+	if(iSurvivorSet == L4D2_SurvivorSet_Both && iOrignalMapSet == L4D2_SurvivorSet_L4D1)
 	{
-		iNum = 3;
+		int iSurvivorCharIndex = iLeastChar[7];
+		iCharBuffer = 7;
+		for(i = 7; i >= 0; i--)
+		{
+			if(iLeastChar[i] < iSurvivorCharIndex)
+			{
+				iSurvivorCharIndex = iLeastChar[i];
+				iCharBuffer = i;
+			}
+		}
 	}
 	else
-		iNum = 7;
-	
-	for(i = 0; i <= iNum; i++)
 	{
-		if(iLeastChar[i] < iSurvivorCharIndex)
+		int iSurvivorCharIndex = iLeastChar[0];
+		iCharBuffer = 0;
+		int iNum;
+		if(iSurvivorSet == L4D2_SurvivorSet_L4D2 || (iSurvivorSet == L4D2_SurvivorSet_Default && iCurrentSet == L4D2_SurvivorSet_L4D2)) 
 		{
-			iSurvivorCharIndex = iLeastChar[i];
-			iCharBuffer = i;
+			iNum = 3;
+		}
+		else
+			iNum = 7;
+		
+		for(i = 0; i <= iNum; i++)
+		{
+			if(iLeastChar[i] < iSurvivorCharIndex)
+			{
+				iSurvivorCharIndex = iLeastChar[i];
+				iCharBuffer = i;
+			}
 		}
 	}
 	return iCharBuffer;
@@ -387,6 +409,7 @@ public MRESReturn Detour_OnGetSurvivorSet(Handle hReturn)
 {
 	// Store the return value
 	iCurrentSet = DHookGetReturn(hReturn);
+	iOrignalMapSet = iCurrentSet;
 	if(iSurvivorSet == L4D2_SurvivorSet_Default)
 		return MRES_Ignored;
 	

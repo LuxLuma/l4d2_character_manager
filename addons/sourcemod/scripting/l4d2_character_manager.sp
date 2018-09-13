@@ -203,6 +203,7 @@ public void ePlayerToBot(Handle hEvent, const char[] sName, bool bDontBroadcast)
 	if(IsFakeClient(iClient) || !bIdentityFix || sModelTracking[iClient][0] == '\0') // team check before fakeclient check incase of spawning infected with CreateFakeClient()
 	{
 		SetCharacter(iBot);
+		RequestFrame(ResetVar, iBot);
 		return;
 	}
 	

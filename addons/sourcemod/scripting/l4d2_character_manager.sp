@@ -18,7 +18,7 @@
 
 #pragma newdecls required
 
-#define PLUGIN_VERSION 	"1.3.8"
+#define PLUGIN_VERSION 	"1.4"
 #define GAMEDATA		"l4d2_character_manager"
 
 
@@ -67,6 +67,8 @@ static char sSurvivorModels[9][] =
 static Handle hCvar_IdentityFix = null;
 static bool bIdentityFix = false;
 
+static Handle hCvar_ManagePeople = null;
+static bool bManagePeople = true;
 
 static char sModelTracking[MAXPLAYERS+1][PLATFORM_MAX_PATH];
 static bool bShouldIgnoreOnce[MAXPLAYERS+1];
@@ -79,7 +81,7 @@ L4D2_SurvivorSet iOrignalMapSet;
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
-	if(GetEngineVersion() != Engine_Left4Dead2 )
+	if(GetEngineVersion() != Engine_Left4Dead2)
 	{
 		strcopy(error, err_max, "Plugin only supports Left 4 Dead 2");
 		return APLRes_SilentFailure;
@@ -103,6 +105,8 @@ public void OnPluginStart()
 	HookConVarChange(hCvar_SurvivorSet, eConvarChanged);
 	hCvar_IdentityFix = CreateConVar("l4d2_identity_fix", "1", "Should enable identity fix for players(NOT BOTS) 0 = (disable) 1 = (enabled)", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	HookConVarChange(hCvar_IdentityFix, eConvarChanged);
+	hCvar_ManagePeople = CreateConVar("l4d2_manage_people", "0", "Should manage people aswell as bots?0 = (disable) 1 = (enabled) (Will overwrite identityfix when taking over a bot)", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	HookConVarChange(hCvar_ManagePeople, eConvarChanged);
 	AutoExecConfig(true, "l4d2_character_manager");
 	CvarsChanged();
 	
@@ -141,6 +145,7 @@ void CvarsChanged()
 		PrintToServer("[Character_manager]L4D2 survivor voices won't be loaded until next map.");
 	
 	bIdentityFix = GetConVarInt(hCvar_IdentityFix) > 0;
+	bManagePeople = GetConVarInt(hCvar_ManagePeople) > 0;
 }
 
 public void eRoundStart(Handle hEvent, const char[] sName, bool bDontBroadcast)
@@ -167,12 +172,21 @@ public void eBotToPlayer(Handle hEvent, const char[] sName, bool bDontBroadcast)
 	
 	int iBot = GetClientOfUserId(GetEventInt(hEvent, "bot"));
 	if(iBot < 1 || !IsClientInGame(iBot))
+	{
+		SetCharacter(iClient);
 		return;
+	}
 	
-	SetEntProp(iClient, Prop_Send, "m_survivorCharacter", GetEntProp(iBot, Prop_Send, "m_survivorCharacter", 2), 2);
-	char sModel[PLATFORM_MAX_PATH];
-	GetEntPropString(iBot, Prop_Data, "m_ModelName", sModel, sizeof(sModel));
-	SetEntityModel(iClient, sModel);
+	if(!bManagePeople)
+	{
+		SetEntProp(iClient, Prop_Send, "m_survivorCharacter", GetEntProp(iBot, Prop_Send, "m_survivorCharacter", 2), 2);
+		char sModel[PLATFORM_MAX_PATH];
+		GetEntPropString(iBot, Prop_Data, "m_ModelName", sModel, sizeof(sModel));
+		SetEntityModel(iClient, sModel);
+	}
+	else
+		SetCharacter(iClient);
+	
 	bShouldIgnoreOnce[iBot] = false;
 }
 
@@ -402,7 +416,9 @@ void SetCharacterInfo(int iClient, int iCharIndex, int iModelIndex)
 {
 	SetEntProp(iClient, Prop_Send, "m_survivorCharacter", iCharIndex, 2);
 	SetEntityModel(iClient, sSurvivorModels[iModelIndex]);
-	SetClientInfo(iClient, "name", sSurvivorNames[iModelIndex]);
+	
+	if(IsFakeClient(iClient))
+		SetClientInfo(iClient, "name", sSurvivorNames[iModelIndex]);
 }
 
 public MRESReturn Detour_OnGetSurvivorSet(Handle hReturn)

@@ -105,7 +105,7 @@ public void OnPluginStart()
 	HookConVarChange(hCvar_SurvivorSet, eConvarChanged);
 	hCvar_IdentityFix = CreateConVar("l4d2_identity_fix", "1", "Should enable identity fix for players(NOT BOTS) 0 = (disable) 1 = (enabled)", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	HookConVarChange(hCvar_IdentityFix, eConvarChanged);
-	hCvar_ManagePeople = CreateConVar("l4d2_manage_people", "0", "Should manage people aswell as bots?0 = (disable) 1 = (enabled) (Will overwrite identityfix when taking over a bot)", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	hCvar_ManagePeople = CreateConVar("l4d2_manage_people", "0", "Should manage people aswell as bots? 0 = (disable) 1 = (enabled) (Will overwrite identityfix when taking over a bot)", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 	HookConVarChange(hCvar_ManagePeople, eConvarChanged);
 	AutoExecConfig(true, "l4d2_character_manager");
 	CvarsChanged();

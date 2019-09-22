@@ -18,9 +18,7 @@
 
 #pragma newdecls required
 
-#define DEBUG 1
-
-#define PLUGIN_VERSION 	"1.4.1"
+#define PLUGIN_VERSION 	"1.4"
 #define GAMEDATA		"l4d2_character_manager"
 
 
@@ -112,8 +110,8 @@ public void OnPluginStart()
 	AutoExecConfig(true, "l4d2_character_manager");
 	CvarsChanged();
 	
-	HookEvent("bot_player_replace", eBotToPlayer, EventHookMode_Pre);
-	HookEvent("player_bot_replace", ePlayerToBot, EventHookMode_Pre);
+	HookEvent("bot_player_replace", eBotToPlayer, EventHookMode_Post);
+	HookEvent("player_bot_replace", ePlayerToBot, EventHookMode_Post);
 	HookEvent("round_start", eRoundStart, EventHookMode_Pre);
 	
 	Handle hGameData = LoadGameConfigFile(GAMEDATA);
@@ -125,15 +123,14 @@ public void OnPluginStart()
 	// ====================================================================================================
 		
 	// Create a hook from config.
-	Handle hDetour = DHookCreateFromConf(hGameData, "CTerrorGameRules::GetSurvivorSet");
-	if( !hDetour )
+	Handle hDetour_OnGetSurvivorSet = DHookCreateFromConf(hGameData, "CTerrorGameRules::GetSurvivorSet");
+	if( !hDetour_OnGetSurvivorSet )
 		SetFailState("Failed to setup detour for CTerrorGameRules::GetSurvivorSet");
+	delete hGameData;
 	
 	// Add a pre hook on the function.
-	if (!DHookEnableDetour(hDetour, true, OnGetSurvivorSet))
+	if (!DHookEnableDetour(hDetour_OnGetSurvivorSet, true, Detour_OnGetSurvivorSet))
 		SetFailState("Failed to detour OnGetSurvivorSet.");
-	
-	delete hGameData;
 }
 
 public void eConvarChanged(Handle hCvar, const char[] sOldVal, const char[] sNewVal)
@@ -215,17 +212,11 @@ public void ePlayerToBot(Handle hEvent, const char[] sName, bool bDontBroadcast)
 	SetEntityModel(iBot, sModelTracking[iClient]);
 	
 	if(iSurvivorChar == 2 && StrEqual(sModelTracking[iClient], sSurvivorModels[8], false))
-	{
 		SetClientInfo(iBot, "name", sSurvivorNames[8]);
-	}
 	else
-	{
 		for (int i = 0; i < 8; i++)
-		{
 			if (StrEqual(sModelTracking[iClient], sSurvivorModels[i])) 
 				SetClientInfo(iBot, "name", sSurvivorNames[i]);
-		}
-	}
 	
 	bShouldIgnoreOnce[iBot] = true;
 	RequestFrame(ResetVar, iBot);
@@ -274,7 +265,7 @@ public void SpawnPost(int iEntity)// before events!
 	if(GetClientTeam(iEntity) == 4)
 		return;
 	
-	//SetCharacter(iEntity);
+	SetCharacter(iEntity);
 	RequestFrame(NextFrame, GetClientUserId(iEntity));
 }
 
@@ -377,23 +368,14 @@ void SetCharacter(int iClient)
 		{
 			switch(CheckLeastUsedSurvivor(iClient))
 			{
-				case 0:
+				case 0, 4:
 					SetCharacterInfo(iClient, L4D1_SETINDEX_BILL_1);
-				case 1:
+				case 1, 5:
 					SetCharacterInfo(iClient, L4D1_SETINDEX_ZOEY_1);
-				case 2:
+				case 2, 7:
 					SetCharacterInfo(iClient, L4D1_SETINDEX_LOUIS_1);
-				case 3:
+				case 3, 6:
 					SetCharacterInfo(iClient, L4D1_SETINDEX_FRANCIS_1);
-				case 4:
-					SetCharacterInfo(iClient, L4D1_SETINDEX_BILL_2);
-				case 5:
-					SetCharacterInfo(iClient, L4D1_SETINDEX_ZOEY_2);
-				case 6:
-					SetCharacterInfo(iClient, L4D1_SETINDEX_FRANCIS_2);
-				case 7:
-					SetCharacterInfo(iClient, L4D1_SETINDEX_LOUIS_2);
-				
 			}
 		}
 		case L4D2_SurvivorSet_L4D2, L4D2_SurvivorSet_Both:
@@ -424,20 +406,14 @@ void SetCharacter(int iClient)
 
 void SetCharacterInfo(int iClient, int iCharIndex, int iModelIndex)
 {
-	if(GetEntProp(iClient, Prop_Send, "m_survivorCharacter", 2) != iCharIndex)
-		SetEntProp(iClient, Prop_Send, "m_survivorCharacter", iCharIndex, 2);
-	
-	char sModel[PLATFORM_MAX_PATH];
-	GetClientModel(iClient, sModel, sizeof(sModel));
-	
-	if(!StrEqual(sModel, sSurvivorModels[iModelIndex], false))
-		SetEntityModel(iClient, sSurvivorModels[iModelIndex]);
+	SetEntProp(iClient, Prop_Send, "m_survivorCharacter", iCharIndex, 2);
+	SetEntityModel(iClient, sSurvivorModels[iModelIndex]);
 	
 	if(IsFakeClient(iClient))
 		SetClientInfo(iClient, "name", sSurvivorNames[iModelIndex]);
 }
 
-public MRESReturn OnGetSurvivorSet(Handle hReturn)
+public MRESReturn Detour_OnGetSurvivorSet(Handle hReturn)
 {
 	// Store the return value
 	iCurrentSet = DHookGetReturn(hReturn);
@@ -455,38 +431,3 @@ public MRESReturn OnGetSurvivorSet(Handle hReturn)
 	DHookSetReturn(hReturn, L4D2_SurvivorSet_L4D1);
 	return MRES_Supercede;
 }
-
-/*
-bool IsCoop(char[] sGameMode)
-{
-	static StringMap hIdleGameModes;
-	if(hIdleGameModes == null)
-	{
-		hIdleGameModes = CreateTrie();
-		hIdleGameModes.SetValue("coop", true);
-		hIdleGameModes.SetValue("realism", true);
-		hIdleGameModes.SetValue("survival", true);
-		hIdleGameModes.SetValue("mutation1", true);
-		hIdleGameModes.SetValue("mutation2", true);
-		hIdleGameModes.SetValue("mutation3", true);
-		hIdleGameModes.SetValue("mutation4", true);
-		hIdleGameModes.SetValue("mutation5", true);
-		hIdleGameModes.SetValue("mutation7", true);
-		hIdleGameModes.SetValue("mutation8", true);
-		hIdleGameModes.SetValue("mutation9", true);
-		hIdleGameModes.SetValue("mutation10", true);
-		hIdleGameModes.SetValue("mutation14", true);
-		hIdleGameModes.SetValue("mutation16", true);
-		hIdleGameModes.SetValue("mutation17", true);
-		hIdleGameModes.SetValue("mutation20", true);
-		hIdleGameModes.SetValue("community1", true);
-		hIdleGameModes.SetValue("community2", true);
-		hIdleGameModes.SetValue("community4", true);
-		hIdleGameModes.SetValue("community5", true);
-	}
-	
-	bool bWantChicken;
-	return (hIdleGameModes.GetValue(sGameMode, bWantChicken));
-		
-}
-*/

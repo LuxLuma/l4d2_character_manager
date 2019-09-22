@@ -335,7 +335,7 @@ int CheckLeastUsedSurvivor(int iClient)
 		int iSurvivorCharIndex = iLeastChar[0];
 		iCharBuffer = 0;
 		int iNum;
-		if(iSurvivorSet == L4D2_SurvivorSet_L4D2 || (iSurvivorSet == L4D2_SurvivorSet_Default && iCurrentSet == L4D2_SurvivorSet_L4D2)) 
+		if(iSurvivorSet != L4D2_SurvivorSet_Both) 
 		{
 			iNum = 3;
 		}
